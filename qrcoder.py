@@ -4,6 +4,7 @@ import hashlib
 import qrcode
 import requests
 import json
+import binascii
 
 from sanic import Sanic, response
 
@@ -59,9 +60,12 @@ async def command(request):
 
 @app.route('qrcode/<key>', methods=['GET'])
 async def show(request, key):
-    return await response.file(
-        await make_qrcode(decode_text(key))
-    )
+    try:
+        return await response.file(
+            await make_qrcode(decode_text(key))
+        )
+    except binascii.Error:
+        return response.text('404 Not Found', status=404)
 
 
 if __name__ == '__main__':
