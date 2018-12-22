@@ -11,13 +11,10 @@ from sanic import Sanic, response
 BASE_URL = os.environ.get('BASE_URL')
 VERIFICATION_TOKEN = os.environ.get('VERIFICATION_TOKEN')
 PORT = int(os.environ.get('PORT', '8000'))
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 app = Sanic()
-app.config.DB_HOST = os.environ.get('DB_HOST')
-app.config.DB_USER = os.environ.get('DB_USER')
-app.config.DB_DATABASE = os.environ.get('DB_DATABASE')
-app.config.DB_PASSWORD = os.environ.get('DB_PASSWORD')
-
+app.config.DB_DSN = DATABASE_URL
 db = Gino()
 db.init_app(app)
 
