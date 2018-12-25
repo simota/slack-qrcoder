@@ -58,7 +58,7 @@ async def before_server_start(_, loop):
     await db.gino.create_all()
 
 
-@app.route('/command', methods=['POST'])
+@app.post('/command')
 async def command(request: Request):
     token = request.form['token'][0]
     if token != VERIFICATION_TOKEN:
@@ -70,7 +70,7 @@ async def command(request: Request):
     return response.text('')
 
 
-@app.route('/<key>', methods=['GET'])
+@app.get('/<key>')
 async def show(request: Request, key: str):
     code = await QRCode.get_or_404(key)
     return await response.file(
