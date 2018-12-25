@@ -1,10 +1,11 @@
 import hashlib
-import os
-import uuid
-import requests
 import json
+import os
+import tempfile
+import uuid
 
 import qrcode
+import requests
 from gino.ext.sanic import Gino
 from sanic import Sanic, response
 from sanic.request import Request
@@ -36,7 +37,7 @@ class QRCode(db.Model):
         return '{}/{}'.format(BASE_URL, self.key)
 
     async def create_image_url(self) -> str:
-        filename = '/tmp/' + self.key + '.png'
+        filename = '{}/{}.png'.format(tempfile.gettempdir(), self.key)
         if not os.path.exists(filename):
             img = qrcode.make(self.value)
             img.save(filename)
