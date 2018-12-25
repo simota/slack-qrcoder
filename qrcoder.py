@@ -7,6 +7,7 @@ import json
 import qrcode
 from gino.ext.sanic import Gino
 from sanic import Sanic, response
+from sanic.request import Request
 
 BASE_URL = os.environ.get('BASE_URL')
 VERIFICATION_TOKEN = os.environ.get('VERIFICATION_TOKEN')
@@ -26,7 +27,7 @@ class QRCode(db.Model):
     value = db.Column(db.Text())
 
     @classmethod
-    async def generate(cls, value: str):
+    async def generate(cls, value: str) -> 'QRCode':
         key = hashlib.sha1(str(uuid.uuid4()).encode()).hexdigest()[0:7]
         return await cls.create(key=key, value=value)
 
@@ -42,14 +43,14 @@ class QRCode(db.Model):
         return filename
 
 
-async def post_to_slack(text, url):
+async def post_to_slack(text: str, response_url: str) -> None:
     code = await QRCode.generate(text)
     data = {
         'response_type': 'in_channel',
         'text': code.url,
         'unfurl_links': True
     }
-    requests.post(url, data=json.dumps(data))
+    requests.post(response_url, data=json.dumps(data))
 
 
 @app.listener('before_server_start')
@@ -58,7 +59,7 @@ async def before_server_start(_, loop):
 
 
 @app.route('/command', methods=['POST'])
-async def command(request):
+async def command(request: Request):
     token = request.form['token'][0]
     if token != VERIFICATION_TOKEN:
         return response.text('401 Unauthorized', status=401)
@@ -70,7 +71,7 @@ async def command(request):
 
 
 @app.route('/<key>', methods=['GET'])
-async def show(request, key):
+async def show(request: Request, key: str):
     code = await QRCode.get_or_404(key)
     return await response.file(
         await code.create_image_url()
