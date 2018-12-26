@@ -9,6 +9,7 @@ import requests
 from gino.ext.sanic import Gino
 from sanic import Sanic, response
 from sanic.request import Request
+from sanic.exceptions import abort
 
 BASE_URL = os.environ.get('BASE_URL')
 VERIFICATION_TOKEN = os.environ.get('VERIFICATION_TOKEN')
@@ -54,6 +55,16 @@ async def post_to_slack(text: str, response_url: str) -> None:
     requests.post(response_url, data=json.dumps(data))
 
 
+def validate_command(form):
+    if 'token' not in form:
+        return False
+    if 'text' not in form:
+        return False
+    if 'response_url' not in form:
+        return False
+    return True
+
+
 @app.listener('before_server_start')
 async def before_server_start(_, loop):
     await db.gino.create_all()
@@ -61,9 +72,13 @@ async def before_server_start(_, loop):
 
 @app.post('/command')
 async def command(request: Request):
+
+    if not validate_command(request.form):
+        abort(400)
+
     token = request.form['token'][0]
     if token != VERIFICATION_TOKEN:
-        return response.text('401 Unauthorized', status=401)
+        abort(401)
 
     text = request.form['text'][0]
     response_url = request.form['response_url'][0]
